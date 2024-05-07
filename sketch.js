@@ -22,51 +22,51 @@ Para las manecillas del segundo reloj se realizarán utilizando el algoritmo DDA
 Para las manecillas del tercer reloj se realizarán utilizando el algoritmo BRESENHAM
 */
 //Dijujando los relojes con punto y medio para circulos
+let timeZones = [
+  { name: "La Paz, BCS", difference: 0, algorithm: "point_slope" },
+  { name: "Ciudad de México", difference: -1, algorithm: "dda" },
+  { name: "Barcelona, Esp", difference: 9, algorithm: "bresenham" }
+];
+
+let times = [];
+let maxPoints = 100; // Limit the number of points for DDA and Bresenham algorithms
+
 function setup() {
-    createCanvas(800, 300);
+  createCanvas(800, 300);
+  textAlign(CENTER, CENTER);
+  textSize(20);
+
+  for (let i = 0; i < timeZones.length; i++) {
+    times.push({
+      hour: 0,
+      minute: 0,
+      second: 0
+    });
   }
+}
+
+function draw() {
+  background(255);
   
-  function draw() {
-    background(255);
+  updateTimes();
+  
+  let xOffset = 150;
+  for (let i = 0; i < times.length; i++) {
+    drawClock(xOffset, 150, times[i], timeZones[i].algorithm);
+    fill(0);
+    noStroke();
+    text(timeZones[i].name, xOffset, 20);
+    xOffset += 250;
+  }
+}
+
+function updateTimes() {
+  for (let i = 0; i < times.length; i++) {
+    let time = times[i];
+    let timeZone = timeZones[i];
     
-    drawClocksOnly(150, 150);
-    drawClocksOnly(400, 150);
-    drawClocksOnly(650, 150);
+    time.second = second();
+    time.minute = minute();
+    time.hour = (hour() + timeZone.difference + 24) % 24;
   }
-  
-  function drawClocksOnly(x, y) {
-    let radius = 100;
-    let xc = x;
-    let yc = y;
-    let p = 1 - radius;
-    let xCircle = 0;
-    let yCircle = radius;
-  
-    point(xc + xCircle, yc + yCircle);
-    point(xc - xCircle, yc + yCircle);
-    point(xc + xCircle, yc - yCircle);
-    point(xc - xCircle, yc - yCircle);
-    point(xc + yCircle, yc + xCircle);
-    point(xc - yCircle, yc + xCircle);
-    point(xc + yCircle, yc - xCircle);
-    point(xc - yCircle, yc - xCircle);
-    
-    while (xCircle < yCircle) {
-      xCircle++;
-      if (p < 0) {
-        p += 2 * xCircle + 1;
-      } else {
-        yCircle--;
-        p += 2 * (xCircle - yCircle) + 1;
-      }
-      point(xc + xCircle, yc + yCircle);
-      point(xc - xCircle, yc + yCircle);
-      point(xc + xCircle, yc - yCircle);
-      point(xc - xCircle, yc - yCircle);
-      point(xc + yCircle, yc + xCircle);
-      point(xc - yCircle, yc + xCircle);
-      point(xc + yCircle, yc - xCircle);
-      point(xc - yCircle, yc - xCircle);
-    }
-  }
-  
+}
