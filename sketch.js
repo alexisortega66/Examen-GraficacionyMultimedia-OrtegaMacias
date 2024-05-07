@@ -36,6 +36,22 @@ function setup() {
   textAlign(CENTER, CENTER);
   textSize(20);
 
+  // Load additional scripts
+  loadScript('clock.js', loaded);
+  loadScript('algorithm.js', loaded);
+}
+
+let scriptsLoaded = 0;
+
+function loaded() {
+  scriptsLoaded++;
+  if (scriptsLoaded === 2) {
+    // Once both files are loaded, proceed with the initialization
+    initialize();
+  }
+}
+
+function initialize() {
   for (let i = 0; i < timeZones.length; i++) {
     times.push({
       hour: 0,
