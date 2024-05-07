@@ -23,19 +23,26 @@ Para las manecillas del tercer reloj se realizarán utilizando el algoritmo BRES
 */
 //Dijujando los relojes con punto y medio para circulos
 let timeZones = [
-  { name: "La Paz, BCS", difference: 0, algorithm: "point_slope" },
-  { name: "Ciudad de México", difference: -1, algorithm: "dda" },
-  { name: "Barcelona, Esp", difference: 9, algorithm: "bresenham" }
+  { name: "La Paz, BCS", difference: 0 },
+  { name: "Ciudad de México", difference: 1 },
+  { name: "Barcelona, Esp", difference: 9 }
 ];
 
 let times = [];
 let maxPoints = 100; // para que no truene
+let selectedTimeZone = 0;
+
+let timeInput;
 
 function setup() {
   createCanvas(800, 300);
   textAlign(CENTER, CENTER);
   textSize(20);
 
+  timeInput = createInput('', 'time');
+  timeInput.position(width/2 - timeInput.width/2, height + 20);
+  timeInput.style('text-align', 'center'); // Centra el texto dentro del input
+  
   for (let i = 0; i < timeZones.length; i++) {
     times.push({
       hour: 0,
@@ -52,7 +59,13 @@ function draw() {
   
   let xOffset = 150;
   for (let i = 0; i < times.length; i++) {
-    drawClock(xOffset, 150, times[i], timeZones[i].algorithm);
+    if (i === 0) {
+      drawClockWithPointSlope(xOffset, 150, times[i]);
+    } else if (i === 1) {
+      drawClockWithDDA(xOffset, 150, times[i]);
+    } else if (i === 2) {
+      drawClockWithBresenham(xOffset, 150, times[i]);
+    }
     fill(0);
     noStroke();
     text(timeZones[i].name, xOffset, 20);
@@ -60,13 +73,29 @@ function draw() {
   }
 }
 
-function drawClock(x, y, time, algorithm) {
+function drawClockWithPointSlope(x, y, time) {
   fill(255);
   stroke(0);
   strokeWeight(2);
-  ellipse(x, y, 200, 200);
   
-  // Dibuja las horas
+  // Dibujar el círculo utilizando la fórmula del punto medio para círculos
+  let r = 100;
+  let x0 = 0;
+  let y0 = r;
+  let p0 = 5 / 4 - r;
+  drawCirclePoints(x, y, x0, y0);
+  while (x0 < y0) {
+    x0++;
+    if (p0 < 0) {
+      p0 += 2 * x0 + 1;
+    } else {
+      y0--;
+      p0 += 2 * (x0 - y0) + 1;
+    }
+    drawCirclePoints(x, y, x0, y0);
+  }
+  
+  // Dibujar las horas
   strokeWeight(4);
   for (let i = 0; i < 12; i++) {
     let angle = map(i, 0, 12, 0, TWO_PI);
@@ -77,35 +106,111 @@ function drawClock(x, y, time, algorithm) {
     line(x1, y1, x2, y2);
   }
   
-  let hourAngle = map(time.hour % 12, 0, 12, 0, TWO_PI) - HALF_PI;
+  let hourAngle = map(time.hour % 12 + time.minute / 60, 0, 12, 0, TWO_PI) - HALF_PI;
   let minuteAngle = map(time.minute, 0, 60, 0, TWO_PI) - HALF_PI;
   let secondAngle = map(time.second, 0, 60, 0, TWO_PI) - HALF_PI;
 
-  switch (algorithm) {
-    case "point_slope":
-      drawHandPointSlope(x, y, 50, hourAngle, 10);
-      drawHandPointSlope(x, y, 70, minuteAngle, 5);
-      drawHandPointSlope(x, y, 70, secondAngle, 2);
-      break;
-    case "dda":
-      drawHandDDA(x, y, 50, hourAngle, 10);
-      drawHandDDA(x, y, 70, minuteAngle, 5);
-      drawHandDDA(x, y, 70, secondAngle, 2);
-      break;
-    case "bresenham":
-      drawHandBresenham(x, y, 50, hourAngle, 10);
-      drawHandBresenham(x, y, 70, minuteAngle, 5);
-      drawHandBresenham(x, y, 70, secondAngle, 2);
-      break;
-    default:
-      console.error("Invalid algorithm");
+  // Manecillas de hora
+  drawHandPointSlope(x, y, 50, hourAngle, 10);
+  // Manecillas de minutos
+  drawHand(x, y, 70, minuteAngle, 5, color(255, 0, 0)); // Manecilla de minutos en rojo
+  // Manecillas de segundos
+  drawHand(x, y, 70, secondAngle, 2);
+}
+
+function drawClockWithDDA(x, y, time) {
+  fill(255);
+  stroke(0);
+  strokeWeight(2);
+  
+  // Dibujar el círculo utilizando la fórmula del punto medio para círculos
+  let r = 100;
+  let x0 = 0;
+  let y0 = r;
+  let p0 = 5 / 4 - r;
+  drawCirclePoints(x, y, x0, y0);
+  while (x0 < y0) {
+    x0++;
+    if (p0 < 0) {
+      p0 += 2 * x0 + 1;
+    } else {
+      y0--;
+      p0 += 2 * (x0 - y0) + 1;
+    }
+    drawCirclePoints(x, y, x0, y0);
   }
+  
+  // Dibujar las horas
+  strokeWeight(4);
+  for (let i = 0; i < 12; i++) {
+    let angle = map(i, 0, 12, 0, TWO_PI);
+    let x1 = x + cos(angle) * 90;
+    let y1 = y + sin(angle) * 90;
+    let x2 = x + cos(angle) * 100;
+    let y2 = y + sin(angle) * 100;
+    line(x1, y1, x2, y2);
+  }
+  
+  let hourAngle = map(time.hour % 12 + time.minute / 60, 0, 12, 0, TWO_PI) - HALF_PI;
+  let minuteAngle = map(time.minute, 0, 60, 0, TWO_PI) - HALF_PI;
+  let secondAngle = map(time.second, 0, 60, 0, TWO_PI) - HALF_PI;
+
+  // Manecillas de hora
+  drawHandDDA(x, y, 50, hourAngle, 10);
+  // Manecillas de minutos
+  drawHand(x, y, 70, minuteAngle, 5, color(255, 0, 0)); // Manecilla de minutos en rojo
+  // Manecillas de segundos
+  drawHand(x, y, 70, secondAngle, 2);
+}
+
+function drawClockWithBresenham(x, y, time) {
+  fill(255);
+  stroke(0);
+  strokeWeight(2);
+  
+  // Dibujar el círculo utilizando la fórmula del punto medio para círculos
+  let r = 100;
+  let x0 = 0;
+  let y0 = r;
+  let p0 = 5 / 4 - r;
+  drawCirclePoints(x, y, x0, y0);
+  while (x0 < y0) {
+    x0++;
+    if (p0 < 0) {
+      p0 += 2 * x0 + 1;
+    } else {
+      y0--;
+      p0 += 2 * (x0 - y0) + 1;
+    }
+    drawCirclePoints(x, y, x0, y0);
+  }
+  
+  // Dibujar las horas
+  strokeWeight(4);
+  for (let i = 0; i < 12; i++) {
+    let angle = map(i, 0, 12, 0, TWO_PI);
+    let x1 = x + cos(angle) * 90;
+    let y1 = y + sin(angle) * 90;
+    let x2 = x + cos(angle) * 100;
+    let y2 = y + sin(angle) * 100;
+    line(x1, y1, x2, y2);
+  }
+  
+  let hourAngle = map(time.hour % 12 + time.minute / 60, 0, 12, 0, TWO_PI) - HALF_PI;
+  let minuteAngle = map(time.minute, 0, 60, 0, TWO_PI) - HALF_PI;
+  let secondAngle = map(time.second, 0, 60, 0, TWO_PI) - HALF_PI;
+
+  // Manecillas de hora
+  drawHandBresenham(x, y, 50, hourAngle, 10);
+  // Manecillas de minutos
+  drawHand(x, y, 70, minuteAngle, 5, color(255, 0, 0)); // Manecilla de minutos en rojo
+  // Manecillas de segundos
+  drawHand(x, y, 70, secondAngle, 2);
 }
 
 function drawHandPointSlope(x, y, length, angle, weight) {
-  let slope = tan(angle);
-  let newX = x + length / sqrt(1 + sq(slope));
-  let newY = y + slope * (newX - x);
+  let newX = x + cos(angle) * length;
+  let newY = y + sin(angle) * length;
   strokeWeight(weight);
   line(x, y, newX, newY);
 }
@@ -152,13 +257,35 @@ function drawHandBresenham(x, y, length, angle, weight) {
   }
 }
 
+function drawHand(x, y, length, angle, weight, color = 0) {
+  let newX = x + cos(angle) * length;
+  let newY = y + sin(angle) * length;
+  stroke(color);
+  strokeWeight(weight);
+  line(x, y, newX, newY);
+}
+
+function drawCirclePoints(xc, yc, x, y) {
+  point(xc + x, yc + y);
+  point(xc - x, yc + y);
+  point(xc + x, yc - y);
+  point(xc - x, yc - y);
+  point(xc + y, yc + x);
+  point(xc - y, yc + x);
+  point(xc + y, yc - x);
+  point(xc - y, yc - x);
+}
+
 function updateTimes() {
+  let newTime = timeInput.value();
+  let [newHour, newMinute] = newTime.split(':');
+  
   for (let i = 0; i < times.length; i++) {
-    let time = times[i];
-    let timeZone = timeZones[i];
+    let timeZoneDifference = timeZones[i].difference - timeZones[selectedTimeZone].difference;
+    let hour = (parseInt(newHour) + timeZoneDifference + 24) % 24;
     
-    time.second = second();
-    time.minute = minute();
-    time.hour = (hour() + timeZone.difference + 24) % 24;
+    times[i].second = second();
+    times[i].minute = parseInt(newMinute);
+    times[i].hour = hour;
   }
 }
